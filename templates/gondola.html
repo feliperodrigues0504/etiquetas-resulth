@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etiqueta Gôndola (75x40mm)</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    
+    <style>
+        /* Estilização global */
+        body { background-color: #f8f9fa; font-family: 'Segoe UI', sans-serif; }
+        .card { border: none; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+        #lista-resultados { max-height: 250px; overflow-y: auto; cursor: pointer; position: absolute; width: 100%; z-index: 1000; display: none; background: white; border: 1px solid #ddd; }
+        .item-resultado:hover { background-color: #f0f0f0; }
+        .item-resultado.active { background-color: #0d6efd; color: white; }
+
+        #area-etiqueta {
+            background: #ccc; padding: 20px; display: flex; justify-content: center;
+            border-radius: 8px; min-height: 200px; align-items: center; overflow: auto;
+        }
+
+        /* Estrutura DA ETIQUETA */
+        .etiqueta-base {
+            width: 75mm;  
+            height: 40mm; 
+            background-color: white; 
+            color: black;
+            font-family: 'Arial', sans-serif;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            
+            padding-top: 0mm;    
+            padding-bottom: 5mm; 
+            padding-left: 2mm;
+            padding-right: 2mm;
+            position: relative;
+        }
+
+        #etiqueta-preview .etiqueta-base { border: 1px dashed #ccc; }
+
+        /* LAYOUT INTERNO DA ETIQUETA */
+        .linha-topo {
+            height: 3mm; 
+            display: flex;
+            align-items: flex-start;
+            padding-top: 0; 
+        }
+        .empresa-nome { font-size: 9px; font-weight: bold; text-transform: uppercase; line-height: 0.9; }
+
+        .linha-descricao {
+            height: 10mm; 
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+            text-align: center;
+            padding-top: 0;
+        }
+        .prod-desc {
+            font-size: 13px; 
+            font-weight: 800;
+            line-height: 1.1;
+            text-transform: uppercase;
+            display: -webkit-box;
+            -webkit-line-clamp: 3;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .linha-preco {
+            height: 15mm;
+            display: flex;
+            align-items: flex-start; 
+            justify-content: center;
+        }
+        .simbolo { font-size: 16px; font-weight: bold; margin-right: 4px; margin-top: 6px;}
+        .valor { font-size: 48px; font-weight: 900; letter-spacing: -1.5px; line-height: 0.8; }
+        .unidade { font-size: 12px; font-weight: bold; margin-left: 4px; margin-top: 14px; }
+
+        .linha-rodape {
+            flex-grow: 1; 
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end; 
+            font-size: 10px;
+            font-weight: bold;
+        }
+        .rodape-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+        #lista-fila { max-height: 200px; overflow-y: auto; }
+        
+        /* DEBUG PARA ERRO DE PAGINA EM BRANCO */
+        #area-impressao { display: none; }
+
+        @media print {
+            @page { 
+                size: 75mm 40mm; 
+                margin: 0; 
+            }
+
+            body * { visibility: hidden; }
+            #area-impressao, #area-impressao * { visibility: visible !important; }
+
+            #area-impressao {
+                display: block !important;
+                position: absolute; 
+                top: 0; 
+                left: 0; 
+                width: 75mm;
+            }
+
+            .etiqueta-impressao {
+                width: 75mm !important; 
+                height: 39mm !important;
+                max-height: 39mm !important;
+                
+                page-break-after: always; 
+                page-break-inside: avoid; 
+                
+                border: none !important; 
+                margin: 0 !important;
+                background-color: white !important;
+                
+                padding-top: 0mm !important;
+                padding-bottom: 5mm !important; 
+                padding-left: 2mm !important;
+                padding-right: 2mm !important;
+                overflow: hidden !important;
+            }
+
+            .etiqueta-impressao:last-child {
+                page-break-after: auto; 
+            }
+
+            html, body {
+                margin: 0 !important;
+                padding: 0 !important;
+                height: 100%;
+                width: 100%;
+                overflow: hidden !important;
+                background-color: white;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-4">
+        <a href="/" class="btn btn-outline-secondary mb-3">
+            <i class="bi bi-arrow-left"></i> Voltar ao Hub
+        </a>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card p-4 h-100">
+                    <h4 class="mb-3 text-dark fw-bold">Gôndola (75x40 mm)</h4>
+                    
+                    <label class="form-label fw-bold">1. Selecione o Produto</label>
+                    <div class="input-group mb-3 position-relative">
+                        <input type="text" id="inputBusca" class="form-control" placeholder="Digite Nome ou bip a Referência..." autocomplete="off">
+                        <button class="btn btn-secondary" onclick="buscarProduto()">
+                            <i class="bi bi-search"></i>
+                        </button>
+                        <ul class="list-group position-absolute w-100 mt-5" id="lista-resultados"></ul>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">2. Quantidade</label>
+                            <input type="number" id="inputQtd" class="form-control" value="1" min="1" step="1">
+                        </div>
+                        <div class="col-6 d-flex align-items-end">
+                            <button class="btn btn-primary w-100" onclick="adicionarFila()">
+                                <i class="bi bi-plus-circle"></i> Adicionar
+                            </button>
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    <h6 class="fw-bold mb-3">3. Fila de Impressão</h6>
+                    <ul class="list-group mb-4" id="lista-fila">
+                        <li class="list-group-item text-muted small text-center">Nenhum produto na fila.</li>
+                    </ul>
+                    
+                    <div class="d-flex gap-2 mt-auto">
+                        <button class="btn btn-outline-danger w-25 btn-lg" id="btnLimpar" onclick="limparFilaInteira()" disabled title="Limpar toda a fila">
+                            <i class="bi bi-trash3-fill"></i>
+                        </button>
+                        <button class="btn btn-dark w-75 btn-lg" id="btnImprimir" onclick="prepararImpressao()" disabled>
+                            <i class="bi bi-printer-fill"></i> IMPRIMIR FILA
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-6">
+                <div class="card p-3 text-center h-100">
+                    <h5 class="mb-4">Preview do Produto Selecionado</h5>
+                    <div id="area-etiqueta">
+                        
+                        <div id="etiqueta-preview">
+                            <div class="etiqueta-base">
+                                <div class="linha-topo">
+                                    <span class="empresa-nome">CETEL ENERGY</span>
+                                </div>
+                                <div class="linha-descricao">
+                                    <span class="prod-desc" id="lblDesc">SELECIONE UM PRODUTO</span>
+                                </div>
+                                <div class="linha-preco">
+                                    <span class="simbolo">R$</span>
+                                    <span class="valor" id="lblPreco">00,00</span>
+                                    <span class="unidade" id="lblUn">UN</span>
+                                </div>
+                                <div class="linha-rodape">
+                                    <span class="rodape-item" id="lblCod">-</span>
+                                    <span class="rodape-item" id="lblEan">-</span>
+                                    <span class="rodape-item" id="lblMarca">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <p class="text-muted small mt-3">A visualização acima mostra apenas o produto atualmente selecionado na barra de pesquisa.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="area-impressao"></div>
+
+    <script>
+        let produtoAtual = null;
+        let filaImpressao = []; 
+        let debounceTimer;
+        let focoAtual = -1; 
+        
+        const inputBusca = document.getElementById('inputBusca');
+        const lista = document.getElementById('lista-resultados');
+
+        function preencherPreview(prod) {
+            document.getElementById('lblDesc').innerText = prod.nome;
+            document.getElementById('lblCod').innerText = prod.codigo; 
+            document.getElementById('lblPreco').innerText = prod.preco.toFixed(2).replace('.', ',');
+            document.getElementById('lblUn').innerText = prod.unidade;
+            document.getElementById('lblEan').innerText = prod.codbarras ? prod.codbarras : ""; 
+            document.getElementById('lblMarca').innerText = prod.marca ? prod.marca : ""; 
+        }
+
+        function limparPreview() {
+            document.getElementById('lblDesc').innerText = "SELECIONE UM PRODUTO";
+            document.getElementById('lblCod').innerText = "-"; 
+            document.getElementById('lblPreco').innerText = "00,00";
+            document.getElementById('lblUn').innerText = "UN";
+            document.getElementById('lblEan').innerText = "-"; 
+            document.getElementById('lblMarca').innerText = "-"; 
+        }
+
+        inputBusca.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            focoAtual = -1; 
+            if(this.value.trim().length === 0) { lista.style.display = 'none'; return; }
+            debounceTimer = setTimeout(() => buscarProduto(), 300);
+        });
+
+        // Navegação via setas e integração com leitor cod baras
+        inputBusca.addEventListener('keydown', function(e) {
+            const itens = lista.getElementsByTagName('li');
+            
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (lista.style.display !== 'none' && itens.length > 0) {
+                    focoAtual++;
+                    adicionarFoco(itens);
+                }
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (lista.style.display !== 'none' && itens.length > 0) {
+                    focoAtual--;
+                    adicionarFoco(itens);
+                }
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                
+                // Valida se o Enter partiu da navegação manual ou diretamente do leitor de código de barras
+                if (lista.style.display !== 'none' && focoAtual > -1 && itens[focoAtual]) {
+                    itens[focoAtual].click();
+                } else {
+                    clearTimeout(debounceTimer);
+                    buscarProduto(true); 
+                }
+            }
+        });
+
+        function adicionarFoco(itens) {
+            removerFoco(itens);
+            if (focoAtual >= itens.length) focoAtual = 0;
+            if (focoAtual < 0) focoAtual = (itens.length - 1);
+            
+            itens[focoAtual].classList.add('active');
+            itens[focoAtual].scrollIntoView({ block: 'nearest' });
+        }
+
+        function removerFoco(itens) {
+            for (let i = 0; i < itens.length; i++) {
+                itens[i].classList.remove('active');
+            }
+        }
+
+        async function buscarProduto(veioDoEnter = false) {
+            const termo = inputBusca.value.trim();
+            if (termo.length === 0) {
+                lista.style.display = 'none';
+                return;
+            }
+
+            try {
+                const res = await fetch(`/api/busca_gondola?q=${termo}`);
+                const dados = await res.json();
+                
+                lista.innerHTML = '';
+                lista.style.display = 'block';
+                focoAtual = -1;
+
+                if (dados.erro || dados.length === 0) { 
+                    lista.innerHTML = '<li class="list-group-item text-muted small">Nada encontrado.</li>'; 
+                    return; 
+                }
+
+                // Lógica de seleção via leitor
+                const produtoExato = dados.find(p => p.codbarras === termo || p.codigo === termo);
+
+                if (veioDoEnter && produtoExato) {
+                    produtoAtual = produtoExato;
+                    preencherPreview(produtoExato);
+                    lista.style.display = 'none';
+                    inputBusca.value = produtoExato.nome;
+                    document.getElementById('inputQtd').focus(); 
+                    document.getElementById('inputQtd').select();
+                    return;
+                }
+
+                dados.forEach(prod => {
+                    const li = document.createElement('li');
+                    li.className = 'list-group-item item-resultado list-group-item-action';
+                    li.innerText = `${prod.codigo} - ${prod.nome} - R$ ${prod.preco.toFixed(2)}`;
+                    li.onclick = () => {
+                        produtoAtual = prod;
+                        preencherPreview(prod);
+                        lista.style.display = 'none';
+                        inputBusca.value = prod.nome;
+                        document.getElementById('inputQtd').focus(); 
+                        document.getElementById('inputQtd').select(); 
+                    };
+                    lista.appendChild(li);
+                });
+            } catch (err) { console.error(err); }
+        }
+
+        // Controle de dados da fila de impressão
+        function adicionarFila() {
+            if (!produtoAtual) {
+                alert("Por favor, pesquise e selecione um produto primeiro.");
+                return;
+            }
+
+            const qtd = parseInt(document.getElementById('inputQtd').value) || 1;
+            
+            filaImpressao.push({
+                produto: produtoAtual,
+                quantidade: qtd
+            });
+
+            atualizarUIFila();
+
+            produtoAtual = null;
+            inputBusca.value = '';
+            document.getElementById('inputQtd').value = 1;
+            limparPreview();
+            
+            inputBusca.focus();
+        }
+
+        document.getElementById('inputQtd').addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                adicionarFila();
+            }
+        });
+
+        function removerFila(index) {
+            filaImpressao.splice(index, 1);
+            atualizarUIFila();
+        }
+
+        function limparFilaInteira() {
+            if(confirm("Tem certeza que deseja limpar toda a fila de impressão?")) {
+                filaImpressao = [];
+                atualizarUIFila();
+            }
+        }
+
+        // Renderização do DOM da fila
+        function atualizarUIFila() {
+            const listaFila = document.getElementById('lista-fila');
+            const btnImprimir = document.getElementById('btnImprimir');
+            const btnLimpar = document.getElementById('btnLimpar'); 
+            
+            listaFila.innerHTML = '';
+
+            if (filaImpressao.length === 0) {
+                listaFila.innerHTML = '<li class="list-group-item text-muted small text-center">Nenhum produto na fila.</li>';
+                btnImprimir.disabled = true;
+                btnLimpar.disabled = true; 
+                return;
+            }
+
+            btnImprimir.disabled = false;
+            btnLimpar.disabled = false; 
+
+            filaImpressao.forEach((item, index) => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center small';
+                li.innerHTML = `
+                    <div class="d-flex align-items-start me-2">
+                        <span class="badge bg-primary rounded-pill me-2 mt-1 flex-shrink-0">${item.quantidade}x</span>
+                        
+                        <div>
+                            ${item.produto.codigo} - ${item.produto.nome}
+                        </div>
+                    </div>
+                    <button class="btn btn-sm btn-outline-danger flex-shrink-0" onclick="removerFila(${index})" title="Remover item">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                `;
+                listaFila.appendChild(li);
+            });
+        }
+
+        // Geração do espelho HTML
+        function gerarHTMLProduto(prod) {
+            const precoFormatado = prod.preco.toFixed(2).replace('.', ',');
+            const refText = prod.codbarras ? prod.codbarras : "";
+            const marcaText = prod.marca ? prod.marca : "";
+
+            return `
+                <div class="etiqueta-base etiqueta-impressao">
+                    <div class="linha-topo">
+                        <span class="empresa-nome">CETEL ENERGY</span>
+                    </div>
+                    <div class="linha-descricao">
+                        <span class="prod-desc">${prod.nome}</span>
+                    </div>
+                    <div class="linha-preco">
+                        <span class="simbolo">R$</span>
+                        <span class="valor">${precoFormatado}</span>
+                        <span class="unidade">${prod.unidade}</span>
+                    </div>
+                    <div class="linha-rodape">
+                        <span class="rodape-item">${prod.codigo}</span>
+                        <span class="rodape-item">${refText}</span>
+                        <span class="rodape-item">${marcaText}</span>
+                    </div>
+                </div>
+            `;
+        }
+
+        function prepararImpressao() {
+            const areaImpressao = document.getElementById('area-impressao');
+            areaImpressao.innerHTML = ''; 
+
+            filaImpressao.forEach(item => {
+                for (let i = 0; i < item.quantidade; i++) {
+                    areaImpressao.innerHTML += gerarHTMLProduto(item.produto);
+                }
+            });
+
+            window.print();
+        }
+    </script>
+</body>
+</html>

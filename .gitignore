@@ -1,1 +1,26 @@
+# Arquivos temporários e de cache do Python
 __pycache__/
+*.py[cod]
+*$py.class
+
+# Diretórios de Ambientes Virtuais (Virtualenvs)
+venv/
+env/
+.venv/
+ENV/
+
+# Arquivos contendo variáveis de ambiente e senhas locais
+.env
+*.env
+
+# Bancos de dados locais (caso utilize algum para testes)
+*.sqlite3
+*.db
+
+# Arquivos gerados pelo sistema operacional
+.DS_Store
+Thumbs.db
+
+# Configurações de editores de código (como VS Code)
+.vscode/
+.idea/
